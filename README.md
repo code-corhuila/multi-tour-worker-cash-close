@@ -22,7 +22,7 @@ variable stops the worker naming it.
 
 ## What is missing
 
-The job itself (list, auto-close, pending-closure alert): task WK8-02. Today the worker starts, validates its configuration and answers `/health`.
+Declared: the routes of the cash api (`/internal/cash-days/open` and `auto-close`) were tested against a stub because they may not be on its `develop` yet; the pending-closure alert is a logging double until the notification piece exists.
 
 ## Branching
 
