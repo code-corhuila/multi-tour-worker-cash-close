@@ -10,6 +10,9 @@ import (
 	"syscall"
 	"time"
 
+	// The runtime image is plain Alpine with no zoneinfo; the job needs the zone of every tenant, so the database travels in the binary.
+	_ "time/tzdata"
+
 	"github.com/code-corhuila/multi-tour-worker-runtime/health"
 	"github.com/code-corhuila/multi-tour-worker-runtime/httpclient"
 	"github.com/code-corhuila/multi-tour-worker-runtime/logging"
