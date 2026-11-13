@@ -165,6 +165,28 @@ func TestA_a_day_the_cash_cannot_close_is_a_quiet_skip(t *testing.T) {
 	}
 }
 
+// AC-WK-08.5: the same run twice. The cash answers 200 again for a day it already closed (the port returns no error), so the worker
+// counts no failure, raises no alert and asks nothing else of the cash than that same close.
+func TestA_a_day_already_closed_is_a_quiet_run(t *testing.T) {
+	cash := &fakeCash{pages: [][]out.OpenDay{{automatic(tenantA, "2026-11-08")}}}
+	alerts := &fakeAlerts{}
+	job := newJob(cash, alerts, &bytes.Buffer{})
+
+	job.Run(ctx(), 100)
+	processed, failed := job.Run(ctx(), 100)
+
+	if failed != 0 || processed != 1 {
+		t.Errorf("second run: processed %d failed %d, want 1 and 0", processed, failed)
+	}
+	want := tenantA + "/2026-11-08"
+	if len(cash.closed) != 2 || cash.closed[0] != want || cash.closed[1] != want {
+		t.Errorf("closes asked = %v, want the same close twice and nothing else", cash.closed)
+	}
+	if len(alerts.raised) != 0 {
+		t.Errorf("alerts = %v, want none", alerts.raised)
+	}
+}
+
 // AC-WK-08.6: one failed day is counted and the others go on.
 func TestA_a_failed_day_does_not_stop_the_others(t *testing.T) {
 	cash := &fakeCash{
