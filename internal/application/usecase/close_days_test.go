@@ -239,3 +239,25 @@ func TestA_log_lines_carry_ids(t *testing.T) {
 		}
 	}
 }
+
+// S4: boxes with operational opening are only alerted and never leave the list, so 500 of them must not hide the automatic boxes behind them.
+func TestA_boxes_only_alerted_do_not_hide_the_automatic_boxes_behind_them(t *testing.T) {
+	var pages [][]out.OpenDay
+	for p := 0; p < 5; p++ {
+		var page []out.OpenDay
+		for i := 0; i < 100; i++ {
+			page = append(page, opened(tenantA, "2026-11-01"))
+		}
+		pages = append(pages, page)
+	}
+	pages = append(pages, []out.OpenDay{automatic(tenantB, "2026-11-08")})
+	cash, alerts, log := &fakeCash{pages: pages}, &fakeAlerts{}, &bytes.Buffer{}
+	job := newJob(cash, alerts, log)
+
+	job.Run(ctx(), 100)
+	job.Run(ctx(), 100)
+
+	if len(cash.closed) != 1 || cash.closed[0] != tenantB+"/2026-11-08" {
+		t.Fatalf("the automatic box behind 500 alerted boxes was not closed within two runs: closed %v, pages asked %v", cash.closed, cash.asked)
+	}
+}

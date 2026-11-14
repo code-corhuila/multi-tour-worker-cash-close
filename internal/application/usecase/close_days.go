@@ -29,6 +29,7 @@ type CloseDays struct {
 	now     func() time.Time
 	mu      sync.Mutex
 	alerted map[string]bool
+	cursor  int // first page of the next run; 0 means the first page, the list wraps at its end
 }
 
 var _ workerruntime.Job = (*CloseDays)(nil)
@@ -81,10 +82,16 @@ type todo struct {
 	what action
 }
 
+// list reads up to maxPages pages from where the previous run stopped and wraps to the first page at the end of the list: a box that
+// is only alerted never leaves the list, so a fixed first window would hide the automatic boxes that sit behind it.
 func (j *CloseDays) list(ctx context.Context, batch int) ([]out.OpenDay, error) {
 	limit := min(batch, maxPageSize)
+	j.mu.Lock()
+	page := max(j.cursor, 1)
+	j.mu.Unlock()
 	var days []out.OpenDay
-	for page := 1; page <= maxPages; page++ {
+	next := 1
+	for read := 0; read < maxPages; read++ {
 		got, err := j.cash.ListOpen(ctx, page, limit)
 		if err != nil {
 			return nil, err
@@ -93,7 +100,12 @@ func (j *CloseDays) list(ctx context.Context, batch int) ([]out.OpenDay, error) 
 		if page >= got.TotalPages {
 			break
 		}
+		page++
+		next = page
 	}
+	j.mu.Lock()
+	j.cursor = next
+	j.mu.Unlock()
 	return days, nil
 }
 
