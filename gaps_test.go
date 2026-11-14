@@ -91,9 +91,9 @@ func TestHU_WRK_008_AC2_an_automatic_box_of_an_ended_day_is_closed_over_http(t *
 	}
 }
 
-// AC-WK-08.2 "with no movements": that condition is the cash's (the worker only sees origin and opening). An automatic box that has movements is
-// refused by the cash with a 422; the worker counts it as no failure, asks once and leaves the day for the next list.
-func TestHU_WRK_008_AC2_an_automatic_box_with_movements_is_refused_by_the_cash_and_is_no_failure(t *testing.T) {
+// AC-WK-08.2: the worker only sees origin and opening; the rest of the decision is the cash's. Transfers do not stop the close (PDR 1.9, AB-02), but
+// when the cash refuses the call with a 422 (a state that changed after the list) the worker counts it as no failure, asks once and leaves the day for the next list.
+func TestHU_WRK_008_AC2_an_automatic_box_refused_by_the_cash_with_a_422_is_no_failure(t *testing.T) {
 	c := &cash{items: []string{day("2026-11-12", "AUTOMATIC_CREATION", false, "America/Bogota")}, status: map[string]int{"2026-11-12": http.StatusUnprocessableEntity}}
 
 	res := c.runner(t, io.Discard, nil).RunOnce(t.Context())
