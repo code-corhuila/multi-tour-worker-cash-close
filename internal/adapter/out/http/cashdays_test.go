@@ -139,3 +139,36 @@ func TestI_list_refuses_a_page_below_one(t *testing.T) {
 		t.Error("page 0 was accepted")
 	}
 }
+
+// AC-WK-08.6: a 429 is retried with the same key and then it works.
+func TestI_retries_a_429_and_then_closes(t *testing.T) {
+	srv, stub := newStub(t, `{}`, http.StatusTooManyRequests, http.StatusTooManyRequests, http.StatusOK)
+
+	err := cashhttp.NewCashDays(newClient(srv.URL)).AutoClose(ctx(), tenant, "2026-11-08")
+
+	if err != nil || stub.calls.Load() != 3 {
+		t.Errorf("429: err %v calls %d, want success after 3 calls", err, stub.calls.Load())
+	}
+}
+
+// AC-WK-08.6: a network error (the cash drops the connection) is retried a bounded number of times and then it is an error that does not leak the token.
+func TestI_retries_a_network_error_and_then_fails_without_the_token(t *testing.T) {
+	var calls atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		calls.Add(1)
+		conn, _, err := w.(http.Hijacker).Hijack()
+		if err == nil {
+			_ = conn.Close()
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	err := cashhttp.NewCashDays(newClient(srv.URL)).AutoClose(ctx(), tenant, "2026-11-08")
+
+	if err == nil || errors.Is(err, out.ErrNotClosable) || strings.Contains(err.Error(), token) {
+		t.Fatalf("err = %v, want a plain failure without the token", err)
+	}
+	if n := calls.Load(); n < 2 || n > 5 {
+		t.Errorf("calls = %d, want the bounded retries of the runtime (2 to 5)", n)
+	}
+}
