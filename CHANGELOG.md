@@ -5,6 +5,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-11-18
+
+Cut 3 follow-up release. The entries below are the commits of pull request 21 merged into `qa` and re-applied to `release/3.1.0` with `git cherry-pick -x`. The frozen head of `qa` is `91842c9d4`.
+
+### Changed
+
+#### Cross-cutting: pull request template and CI header comment (no single story is named in the pull request title, branch or body)
+
+- The repository has a pull request template and the comment in the header of the CI workflow says which branches trigger it ([PR 21](https://github.com/code-corhuila/multi-tour-worker-cash-close/pull/21))
+
+
 ## [3.0.0] - 2026-11-14
 
 Cut 3 release. Every entry below is a pull request merged into `qa` and re-applied to `release/3.0.0` with `git cherry-pick -x`; the heading of each group is the user story named in the pull request, and the entry is the title of the pull request without its type. The frozen head of `qa` is `3e74fdcbd2cdf92815381223bdac8494b5c6615d`.
